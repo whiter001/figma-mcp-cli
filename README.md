@@ -37,7 +37,7 @@ MCP 客户端（Codex / Claude Code / Cursor …）通过配置项把远程 MCP 
 
 ```bash
 # 全局安装
-npm install -g fmcp
+npm install -g @whiter001/fmcp
 
 # 或从源码运行
 npm install
@@ -47,8 +47,9 @@ node dist/cli.js help
 
 > 需要 Node.js >= 18.17（`fetch` 原生可用）。本工具**零运行时依赖**。
 >
-> **关于命名**：npm 上 `fmcp` 可用，而 `figma-mcp`（v0.1.4）和 `figma-mcp-cli`（v1.0.11）
-> 已被他人占用，所以包名与主命令统一用 `fmcp`。安装后 `fmcp` 和 `figma-mcp` 两个命令都存在。
+> **关于命名**：npm 的名称相似度策略不允许发布全局名 `fmcp`（与 `ftp`/`ncp`/`mcp1`/`tmp` 过于接近），
+> 官方报错里建议改用作用域包，因此包名为 `@whiter001/fmcp`。
+> 安装后 `fmcp` 和 `figma-mcp` 两个命令都可用。
 
 ### Windows PowerShell 管道注意
 

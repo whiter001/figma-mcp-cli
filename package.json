@@ -1,5 +1,5 @@
 {
-  "name": "fmcp",
+  "name": "@whiter001/fmcp",
   "version": "0.0.1",
   "description": "Call the Figma MCP server (https://mcp.figma.com/mcp) directly from your terminal — no [mcp_servers.*] config needed.",
   "type": "module",

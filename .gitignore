@@ -3,6 +3,7 @@ dist/
 dist-test/
 *.tsbuildinfo
 credentials.json
+.npmrc-publish
 .figma-out/
 .playwright-mcp/
 *.log

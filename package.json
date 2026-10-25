@@ -1,0 +1,39 @@
+{
+  "name": "fmcp",
+  "version": "0.0.1",
+  "description": "Call the Figma MCP server (https://mcp.figma.com/mcp) directly from your terminal — no [mcp_servers.*] config needed.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "bin": {
+    "fmcp": "dist/cli.js",
+    "figma-mcp": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/postbuild.mjs",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "tsc -p tsconfig.test.json && node --test \"dist-test/test/*.test.js\"",
+    "smoke": "node scripts/serve-smoke.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "figma",
+    "mcp",
+    "model-context-protocol",
+    "cli",
+    "design",
+    "fmcp"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

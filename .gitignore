@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-test/
+*.tsbuildinfo
+credentials.json
+.figma-out/
+.playwright-mcp/
+*.log
+.DS_Store

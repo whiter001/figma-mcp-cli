@@ -177,13 +177,15 @@ args = ["serve"]
 
 ### `fmcp skill`（给 agent 装 Figma skills）
 
-Figma 的 skill 是给 agent 看的「怎么用这些 MCP 工具」说明书（SKILL.md）。
-本命令直接从官方仓库和社区索引拉下来，装进对应 agent 的 skills 目录。
+skill 是给 agent 看的使用说明书（SKILL.md）。本命令可以安装随包内置的
+`fmcp` 使用说明，也可以从 Figma 官方仓库和社区索引下载其他 skills。
 
 ```bash
-fmcp skill list                                  # 列出可安装的（官方 16 个 + 社区 ~30 个）
+fmcp skill list                                  # 列出可安装的（内置 + 官方 + 社区）
+fmcp skill list --source builtin                 # 只看内置
 fmcp skill list --source community               # 只看社区
 fmcp skill list --filter token                   # 按名称/描述/工具过滤
+fmcp skill install fmcp                          # 安装 fmcp 使用说明到 ~/.agents/skills
 fmcp skill install figma-design-to-code          # 装到 ~/.agents/skills
 fmcp skill install figma-design-to-code --scope project   # 装到 ./.agents/skills
 fmcp skill install figma-design-to-code --client codex
@@ -197,6 +199,7 @@ fmcp skill remove figma-design-to-code --client codex
 
 | 来源 | 仓库 | 内容 |
 | --- | --- | --- |
+| 内置 | 本 npm 包的 `skills/` 目录 | `fmcp` 命令行使用说明，安装时无需访问 GitHub |
 | 官方 | `figma/mcp-server-guide/skills` | `figma-design-to-code`、`figma-code-connect`、`figma-use`、`figma-spec`、`figma-generate-design` … 共 16 个 |
 | 社区 | `figma/community-resources` 索引 | 约 30 个（`export-tokens-figma`、`import-tokens-figma`、`ds-init-figma`、`bridge-ds` …） |
 
@@ -224,12 +227,12 @@ fmcp skill remove figma-design-to-code --client codex
 > 老目录用软链过渡，避免三份拷贝各自漂移。
 > 需要按客户端分开时用 `--client` 显式指定。
 
-下载走 GitHub tarball，用 Node 内置 zlib 自己解 tar（无第三方依赖）；
-设置 `GITHUB_TOKEN` 可提高 GitHub API 限额。
+内置 skill 直接从 npm 包复制。远程 skill 下载走 GitHub tarball，用 Node 内置 zlib
+自己解 tar（无第三方依赖）；设置 `GITHUB_TOKEN` 可提高 GitHub API 限额。
 
-skill 目录会缓存到 `~/.fmcp/cache/catalog.json`（6 小时），`fmcp skill list` 秒开；
+远程 skill 目录会缓存到 `~/.fmcp/cache/catalog.json`（6 小时），`fmcp skill list` 秒开；
 `--refresh` 强制刷新。索引优先走 GitHub API，`raw.githubusercontent.com` 只作兜底
-（后者在部分网络下不可达）。
+（后者在部分网络下不可达）。内置 skill 每次从当前 npm 包读取，不依赖该缓存。
 
 **和 `skillNames` 的关系**
 
@@ -311,8 +314,10 @@ src/
   mcp/client.ts       MCP Streamable HTTP 客户端（JSON-RPC + SSE）
   mcp/stdio.ts        stdio MCP 桥接（serve 模式）
   commands/           login / logout / status / tools / call / 快捷命令 / skill / serve
-  skills/             skill 目录（官方 + 社区）、安装与卸载
+  skills/             内置目录发现、远程目录（官方 + 社区）、安装与卸载
   util/               Figma 链接解析、tar 解包、加密、浏览器、日志
+skills/
+  fmcp/SKILL.md      随 npm 包发布的 fmcp 使用说明
 ```
 
 ## License

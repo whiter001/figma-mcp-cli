@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { log } from '../util/logger.js';
-import { fetchCatalog, type SkillEntry } from '../skills/catalog.js';
+import { fetchBuiltinSkills, fetchCatalog, type SkillEntry } from '../skills/catalog.js';
 import {
   CLIENTS,
   installSkill,
@@ -14,7 +14,7 @@ import {
 
 export interface SkillOptions {
   json?: boolean;
-  /** Filter: official | community */
+  /** Filter: builtin | official | community */
   source?: string;
   /** Target client id. */
   client?: string;
@@ -56,7 +56,9 @@ export async function skillCommand(
 }
 
 async function listSkills(options: SkillOptions): Promise<void> {
-  const catalog = await fetchCatalog({ refresh: options.refresh });
+  const catalog = options.source?.toLowerCase() === 'builtin'
+    ? fetchBuiltinSkills()
+    : await fetchCatalog({ refresh: options.refresh });
   const target = resolveTarget(options);
 
   let entries = catalog;
@@ -90,10 +92,19 @@ async function listSkills(options: SkillOptions): Promise<void> {
     return;
   }
 
+  const builtin = entries.filter((e) => e.source === 'builtin');
   const official = entries.filter((e) => e.source === 'official');
   const community = entries.filter((e) => e.source === 'community');
 
   log.out(`可安装的 skill（目标目录: ${target.dir}）\n`);
+
+  if (builtin.length) {
+    log.out('内置 (@whiter001/fmcp):');
+    for (const entry of builtin) {
+      log.out(`  ${mark(installed.has(entry.name))} ${entry.name}`);
+    }
+    log.out('');
+  }
 
   if (official.length) {
     log.out('官方 (figma/mcp-server-guide):');
@@ -122,7 +133,9 @@ async function installCommand(args: string[], options: SkillOptions): Promise<vo
     throw new Error('用法: fmcp skill install <skill名> [--client ...] [--force]');
   }
 
-  const catalog = await fetchCatalog({ refresh: options.refresh });
+  const builtin = fetchBuiltinSkills();
+  const needsRemote = names.some((name) => !findSkill(builtin, name));
+  const catalog = needsRemote ? await fetchCatalog({ refresh: options.refresh }) : builtin;
   const target = resolveTarget(options);
 
   const installed: string[] = [];

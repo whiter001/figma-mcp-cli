@@ -1,6 +1,6 @@
 {
   "name": "@whiter001/fmcp",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Call the Figma MCP server (https://mcp.figma.com/mcp) directly from your terminal — no [mcp_servers.*] config needed.",
   "type": "module",
   "license": "MIT",
@@ -15,6 +15,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
+    "skills",
     "README.md"
   ],
   "scripts": {

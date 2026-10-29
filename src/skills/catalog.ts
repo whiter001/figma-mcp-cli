@@ -1,15 +1,16 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { log } from '../util/logger.js';
 
-export type SkillSource = 'official' | 'community';
+export type SkillSource = 'builtin' | 'official' | 'community';
 
 export interface SkillEntry {
   name: string;
   source: SkillSource;
-  /** owner/repo on GitHub. */
-  repo: string;
+  /** owner/repo on GitHub; undefined for built-in skills. */
+  repo?: string;
   /** Branch to download, undefined = the repository default branch. */
   branch?: string;
   /** Path of the skill folder inside the repository (empty = repository root). */
@@ -77,6 +78,40 @@ async function fetchWithRetry(
   }
 
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
+}
+
+/** Skills shipped in this package. */
+export function fetchBuiltinSkills(): SkillEntry[] {
+  const root = builtinSkillsRoot();
+  if (!root || !existsSync(root)) return [];
+
+  return readdirSync(root, { withFileTypes: true })
+    .filter((item) => item.isDirectory() && existsSync(join(root, item.name, 'SKILL.md')))
+    .map((item) => ({
+      name: item.name,
+      source: 'builtin' as const,
+      path: `skills/${item.name}`,
+      url: `https://github.com/whiter001/figma-mcp-cli/tree/main/skills/${item.name}`,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Resolve a built-in skill inside the installed package. */
+export function builtinSkillPath(name: string): string | undefined {
+  const root = builtinSkillsRoot();
+  if (!root) return undefined;
+  const candidate = join(root, name);
+  return existsSync(join(candidate, 'SKILL.md')) ? candidate : undefined;
+}
+
+function builtinSkillsRoot(): string | undefined {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  while (true) {
+    if (existsSync(join(dir, 'package.json'))) return join(dir, 'skills');
+    const parent = dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
 }
 
 /** All official Figma skills, straight from the figma/mcp-server-guide repo. */
@@ -218,10 +253,11 @@ export function parseGitHubUrl(url: string): GitHubLocation | undefined {
   return { repo: `${owner}/${repo}`, ...(branch ? { branch } : {}), path };
 }
 
-/** Official + community catalog. */
+/** Built-in + official + community catalog. */
 export async function fetchCatalog(options: { refresh?: boolean } = {}): Promise<SkillEntry[]> {
+  const builtin = fetchBuiltinSkills();
   const cached = readCatalogCache();
-  if (cached && !options.refresh) return cached.entries;
+  if (cached && !options.refresh) return mergeSkills([...builtin, ...cached.entries]);
 
   const [official, community] = await Promise.all([
     fetchOfficialSkills().catch((err) => {
@@ -234,18 +270,22 @@ export async function fetchCatalog(options: { refresh?: boolean } = {}): Promise
     }),
   ]);
 
+  const remote = mergeSkills([...official, ...community]);
+
+  // Only cache a complete remote result — a partial one would hide skills.
+  if (official.length && community.length) writeCatalogCache(remote);
+
+  return mergeSkills([...builtin, ...remote]);
+}
+
+function mergeSkills(entries: SkillEntry[]): SkillEntry[] {
   const seen = new Set<string>();
-  const entries = [...official, ...community].filter((entry) => {
+  return entries.filter((entry) => {
     const key = `${entry.source}:${entry.name}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
-
-  // Only cache a complete result — a partial one would hide skills.
-  if (official.length && community.length) writeCatalogCache(entries);
-
-  return entries;
 }
 
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;

@@ -1,7 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readTar } from '../src/util/tar.js';
-import { parseGitHubUrl, parseCommunityIndex } from '../src/skills/catalog.js';
+import {
+  builtinSkillPath,
+  fetchBuiltinSkills,
+  parseGitHubUrl,
+  parseCommunityIndex,
+} from '../src/skills/catalog.js';
 
 function tarHeader(name: string, size: number, typeflag = '0'): Buffer {
   const header = Buffer.alloc(512);
@@ -80,4 +85,11 @@ test('parseCommunityIndex extracts name, source, tools and description', () => {
   assert.equal(entry?.path, 'skills/demo');
   assert.deepEqual(entry?.tools, ['use_figma', 'get_metadata']);
   assert.equal(entry?.description, 'Does a demo thing with the design.');
+});
+
+test('builtin catalog includes fmcp and resolves its packaged SKILL.md', () => {
+  const entry = fetchBuiltinSkills().find((skill) => skill.name === 'fmcp');
+  assert.equal(entry?.source, 'builtin');
+  assert.equal(entry?.path, 'skills/fmcp');
+  assert.ok(builtinSkillPath('fmcp'));
 });

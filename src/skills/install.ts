@@ -10,9 +10,9 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { extractTarGz } from '../util/tar.js';
-import { githubHeaders, tarballUrl, type SkillEntry } from './catalog.js';
+import { builtinSkillPath, githubHeaders, tarballUrl, type SkillEntry } from './catalog.js';
 import { log } from '../util/logger.js';
 
 export interface ClientTarget {
@@ -105,7 +105,7 @@ export interface InstallResult {
   updated: boolean;
 }
 
-/** Download and install one skill into the target skills directory. */
+/** Install one built-in or remote skill into the target skills directory. */
 export async function installSkill(
   entry: SkillEntry,
   target: ClientTarget,
@@ -116,19 +116,30 @@ export async function installSkill(
     throw new Error(`${entry.name} 已安装在 ${dest}（用 --force 覆盖）`);
   }
 
-  log.info(`下载 ${entry.repo} ...`);
-  const tarball = await downloadTarball(entry.repo, entry.branch);
-
   const tempRoot = mkdtempSync(join(tmpdir(), 'fmcp-skill-'));
   try {
-    extractTarGz(tarball, tempRoot);
+    let sourceDir: string | undefined;
+    if (entry.source === 'builtin') {
+      sourceDir = builtinSkillPath(entry.name);
+    } else {
+      if (!entry.repo) throw new Error(`skill "${entry.name}" 缺少来源仓库`);
+      log.info(`下载 ${entry.repo} ...`);
+      const tarball = await downloadTarball(entry.repo, entry.branch);
+      extractTarGz(tarball, tempRoot);
+      sourceDir = locateSkillDir(tempRoot, entry);
+    }
 
-    const sourceDir = locateSkillDir(tempRoot, entry);
     if (!sourceDir) {
+      if (entry.source === 'builtin') {
+        throw new Error(`内置 skill "${entry.name}" 缺失，请重新安装 @whiter001/fmcp`);
+      }
       throw new Error(
         `在 ${entry.repo} 的 ${entry.path || '(根目录)'} 下没找到 SKILL.md，` +
           `可能仓库结构已变化。`,
       );
+    }
+    if (resolve(sourceDir) === resolve(dest)) {
+      throw new Error('skill 源目录与安装目标不能相同');
     }
 
     if (existsSync(dest)) rmSync(dest, { recursive: true, force: true });
@@ -145,7 +156,7 @@ export async function installSkill(
       source: entry.source,
       url: entry.url,
       path: entry.path,
-      repo: entry.repo,
+      repo: entry.repo ?? 'builtin',
       installedAt: new Date().toISOString(),
     };
     saveManifest(manifest);

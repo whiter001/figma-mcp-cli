@@ -87,6 +87,7 @@ export async function protectSecret(plaintext: string, keyMaterial: string): Pro
     const b64 = Buffer.from(plaintext, 'utf8').toString('base64');
     const script = [
       '$ErrorActionPreference = "Stop"',
+      'Add-Type -AssemblyName System.Security',
       '$b64 = [Console]::In.ReadToEnd()',
       '$plain = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))',
       '$bytes = [System.Text.Encoding]::UTF8.GetBytes($plain)',
@@ -115,6 +116,8 @@ export async function unprotectSecret(
   if (result.method === 'dpapi') {
     const script = [
       '$ErrorActionPreference = "Stop"',
+      'Add-Type -AssemblyName System.Security',
+      '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8',
       '$b64 = [Console]::In.ReadToEnd()',
       '$bytes = [System.Convert]::FromBase64String($b64)',
       '$plain = [System.Security.Cryptography.ProtectedData]::Unprotect($bytes, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)',

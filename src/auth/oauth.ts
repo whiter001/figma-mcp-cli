@@ -1,7 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { createCodeVerifier, pkceChallenge, randomString } from '../util/crypto.js';
-import { openBrowser } from '../util/browser.js';
 import { log } from '../util/logger.js';
 import type { StoredClient, StoredToken } from './store.js';
 
